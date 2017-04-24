@@ -1,0 +1,4 @@
+brew install homebrew/science/dlib python boost-python
+pip install face_recognition
+brew install opencv
+comment out line 65 of python script
