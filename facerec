@@ -1,8 +1,13 @@
+#!/usr/local/bin/python
+
 import face_recognition
 import cv2
 import glob
 import os.path
-from sys import stdout
+import sys
+import signal
+from sys import stdout as out
+import getopt
 
 # This is a demo of running face recognition on live video from your webcam.
 # It's a little more complicated than the other example, but it includes some
@@ -15,6 +20,19 @@ from sys import stdout
 # face_recognition library. It's only required if you want to run this specific
 # demo. If you have trouble installing it, try any of the other demos that
 # don't require it instead.
+
+opts, args = getopt.getopt(sys.argv, "v")
+show_video = False
+for opt, arg in opts:
+    if opt == "-v":
+        show_video = true
+
+# No, globals aren't the best, but neither is this script!
+processing = True
+def signal_handler(signal, frame):
+    global processing
+    processing = False
+signal.signal(signal.SIGINT, signal_handler)
 
 # Get a reference to webcam #0 (the default one)
 print("Starting Camera... ")
@@ -41,7 +59,7 @@ face_names = []
 process_this_frame = True
 
 print("Processing video... ")
-while True:
+while processing:
     # Grab a single frame of video
     ret, frame = video_capture.read()
 
@@ -61,32 +79,29 @@ while True:
 
     process_this_frame = not process_this_frame
 
-    stdout.write("\r\33[2K")
-    stdout.write(", ".join(sorted(face_names)))
-    stdout.flush()
+    out.write("\r\33[2K")
+    out.write(", ".join(sorted(face_names)))
+    out.flush()
 
-    # Display the results
-    for (top, right, bottom, left), name in zip(face_locations, face_names):
-        # Scale back up face locations since the frame we detected in was scaled to 1/4 size
-        top *= 4
-        right *= 4
-        bottom *= 4
-        left *= 4
+    if show_video:
+        # Display the results
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            # Scale back up face locations since the frame we detected in was scaled to 1/4 size
+            top *= 4
+            right *= 4
+            bottom *= 4
+            left *= 4
 
-        # Draw a box around the face
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            # Draw a box around the face
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
 
-        # Draw a label with a name below the face
-        # cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-        font = cv2.FONT_HERSHEY_DUPLEX
-        cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            # Draw a label with a name below the face
+            # cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+            font = cv2.FONT_HERSHEY_DUPLEX
+            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
 
-    # Display the resulting image
-    cv2.imshow('Video', frame)
-
-    # Hit 'q' on the keyboard to quit!
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        # Display the resulting image
+        cv2.imshow('Video', frame)
 
 # Release handle to the webcam
 video_capture.release()
