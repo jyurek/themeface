@@ -6,3 +6,4 @@
 ## Notes
 
 * `compare_faces` returns a list that maps to the input list
+* If you want video, don't get rid of the `waitKey` call.

@@ -23,16 +23,12 @@ import getopt
 
 opts, args = getopt.getopt(sys.argv, "v")
 show_video = False
-for opt, arg in opts:
-    if opt == "-v":
-        show_video = true
+for arg in args:
+    if arg == "-v":
+        show_video = True
 
-# No, globals aren't the best, but neither is this script!
-processing = True
-def signal_handler(signal, frame):
-    global processing
-    processing = False
-signal.signal(signal.SIGINT, signal_handler)
+if show_video:
+    print("Showing output video.")
 
 # Get a reference to webcam #0 (the default one)
 print("Starting Camera... ")
@@ -57,6 +53,13 @@ face_locations = []
 face_encodings = []
 face_names = []
 process_this_frame = True
+
+# No, globals aren't the best, but neither is this script!
+processing = True
+def signal_handler(signal, frame):
+    global processing
+    processing = False
+signal.signal(signal.SIGINT, signal_handler)
 
 print("Processing video... ")
 while processing:
@@ -102,6 +105,10 @@ while processing:
 
         # Display the resulting image
         cv2.imshow('Video', frame)
+
+        # Allow things to draw
+        cv2.waitKey(1)
+
 
 # Release handle to the webcam
 video_capture.release()
