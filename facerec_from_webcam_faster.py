@@ -17,19 +17,26 @@ import cv2
 video_capture = cv2.VideoCapture(0)
 
 # Load a sample picture and learn how to recognize it.
-people = [ "jon-yurek", "karen-yurek" ]
+people = [("Jon", "jon-yurek.jpg"), ("Josh", "josh-clayton.jpg")]
 source_encodings = []
-for person in people:
-    print("source_images/{0}.jpg".format(person))
-    image = face_recognition.load_image_file("source_images/{0}.jpg".format(person))
+for name, filename in people:
+    print("source_images/{0}".format(filename))
+    image = face_recognition.load_image_file("source_images/{0}".format(filename))
     encoding = face_recognition.face_encodings(image)[0]
-    source_encodings.append(encoding)
+    source_encodings.append((name, encoding))
 
 # Initialize some variables
 face_locations = []
 face_encodings = []
 face_names = []
 process_this_frame = True
+
+def first_matching_encoding(name_encoding_tuples, face_encoding):
+    for name, encoding in name_encoding_tuples:
+        print ("Comparing with {0}".format(name))
+        if face_recognition.compare_faces([encoding], face_encoding)[0]:
+            return name
+    return "Unknown"
 
 while True:
     # Grab a single frame of video
@@ -44,16 +51,11 @@ while True:
         face_locations = face_recognition.face_locations(small_frame)
         face_encodings = face_recognition.face_encodings(small_frame, face_locations)
 
+        print("found {0} faces".format(len(face_locations)))
+
         face_names = []
         for face_encoding in face_encodings:
-            # See if the face is a match for the known face(s)
-            match = face_recognition.compare_faces(source_encodings, face_encoding)
-            name = "Unknown"
-
-            if match[0]:
-                name = "Barack"
-
-            face_names.append(name)
+            face_names.append(first_matching_encoding(source_encodings, face_encoding))
 
     process_this_frame = not process_this_frame
 
