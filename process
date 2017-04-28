@@ -1,4 +1,8 @@
-brew install homebrew/science/dlib python boost-python
-pip install face_recognition
-brew install opencv
-comment out line 65 of python script
+1. brew install homebrew/science/dlib python boost-python
+1. pip install face_recognition
+1. brew install opencv
+1. comment out line with FILLED in it
+
+## Notes
+
+* `compare_faces` returns a list that maps to the input list
