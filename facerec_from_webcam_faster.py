@@ -1,5 +1,7 @@
 import face_recognition
 import cv2
+import glob
+import os.path
 
 # This is a demo of running face recognition on live video from your webcam.
 # It's a little more complicated than the other example, but it includes some
@@ -14,17 +16,22 @@ import cv2
 # don't require it instead.
 
 # Get a reference to webcam #0 (the default one)
+print("Starting Camera... ")
 video_capture = cv2.VideoCapture(0)
+print("Done.")
 
+print("Loading training data... ")
 # Load a sample picture and learn how to recognize it.
-people = [("Jon", "jon-yurek.jpg"), ("Josh", "josh-clayton.jpg")]
+people = glob.glob("source_images/*.*")
 source_encodings = []
-for name, filename in people:
-    print("source_images/{0}".format(filename))
-    image = face_recognition.load_image_file("source_images/{0}".format(filename))
+for filename in people:
+    print(filename)
+    image = face_recognition.load_image_file(filename)
     encoding = face_recognition.face_encodings(image)[0]
+    name = os.path.basename(filename).split(".")[0]
     source_encodings.append((name, encoding))
 
+print("Done.")
 # Initialize some variables
 face_locations = []
 face_encodings = []
@@ -33,11 +40,11 @@ process_this_frame = True
 
 def first_matching_encoding(name_encoding_tuples, face_encoding):
     for name, encoding in name_encoding_tuples:
-        print ("Comparing with {0}".format(name))
         if face_recognition.compare_faces([encoding], face_encoding)[0]:
             return name
     return "Unknown"
 
+print("Processing video... ")
 while True:
     # Grab a single frame of video
     ret, frame = video_capture.read()
@@ -50,8 +57,6 @@ while True:
         # Find all the faces and face encodings in the current frame of video
         face_locations = face_recognition.face_locations(small_frame)
         face_encodings = face_recognition.face_encodings(small_frame, face_locations)
-
-        print("found {0} faces".format(len(face_locations)))
 
         face_names = []
         for face_encoding in face_encodings:
@@ -86,3 +91,4 @@ while True:
 # Release handle to the webcam
 video_capture.release()
 cv2.destroyAllWindows()
+print("Done.")
