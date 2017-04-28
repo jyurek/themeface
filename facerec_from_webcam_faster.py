@@ -22,14 +22,15 @@ print("Done.")
 
 print("Loading training data... ")
 # Load a sample picture and learn how to recognize it.
-people = glob.glob("source_images/*.*")
+source_files = glob.glob("source_images/*.*")
+names = []
 source_encodings = []
-for filename in people:
+for filename in source_files:
     print(filename)
     image = face_recognition.load_image_file(filename)
     encoding = face_recognition.face_encodings(image)[0]
-    name = os.path.basename(filename).split(".")[0]
-    source_encodings.append((name, encoding))
+    names.append(os.path.basename(filename).split(".")[0])
+    source_encodings.append(encoding)
 
 print("Done.")
 # Initialize some variables
@@ -37,12 +38,6 @@ face_locations = []
 face_encodings = []
 face_names = []
 process_this_frame = True
-
-def first_matching_encoding(name_encoding_tuples, face_encoding):
-    for name, encoding in name_encoding_tuples:
-        if face_recognition.compare_faces([encoding], face_encoding)[0]:
-            return name
-    return "Unknown"
 
 print("Processing video... ")
 while True:
@@ -60,7 +55,8 @@ while True:
 
         face_names = []
         for face_encoding in face_encodings:
-            face_names.append(first_matching_encoding(source_encodings, face_encoding))
+            matches = face_recognition.compare_faces(source_encodings, face_encoding)
+            face_names = face_names + [name for name, match in zip(names, matches) if match]
 
     process_this_frame = not process_this_frame
 
