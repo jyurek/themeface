@@ -2,6 +2,7 @@ import face_recognition
 import cv2
 import glob
 import os.path
+from sys import stdout
 
 # This is a demo of running face recognition on live video from your webcam.
 # It's a little more complicated than the other example, but it includes some
@@ -60,6 +61,9 @@ while True:
 
     process_this_frame = not process_this_frame
 
+    stdout.write("\r\33[2K")
+    stdout.write(", ".join(sorted(face_names)))
+    stdout.flush()
 
     # Display the results
     for (top, right, bottom, left), name in zip(face_locations, face_names):
@@ -87,4 +91,4 @@ while True:
 # Release handle to the webcam
 video_capture.release()
 cv2.destroyAllWindows()
-print("Done.")
+print("\nDone.")
