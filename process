@@ -2,6 +2,8 @@
 1. pip install face_recognition
 1. brew install opencv
 1. comment out line with FILLED in it
+1. Setup Raspi
+1. Did all this https://gist.github.com/ageitgey/1ac8dbe8572f3f533df6269dab35df65
 
 ## Notes
 
