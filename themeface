@@ -1,0 +1,68 @@
+#!/usr/local/bin/python
+
+import face_recognition
+import picamera
+import numpy as np
+import glob
+import os.path
+import sys
+import signal
+from sys import stdout as out
+
+print("Starting Camera... ")
+camera = picamera.PiCamera()
+camera.resolution = (320, 240)
+output = np.empty((240, 320, 3), dtype=np.uint8)
+print("Done.")
+
+print("Loading training data... ")
+source_files = glob.glob("source_images/*.*")
+names = []
+source_encodings = []
+for filename in source_files:
+    print(filename)
+    image = face_recognition.load_image_file(filename)
+    encoding = face_recognition.face_encodings(image)[0]
+    names.append(os.path.basename(filename).split(".")[0])
+    source_encodings.append(encoding)
+
+print("Done.")
+# Initialize some variables
+face_locations = []
+face_encodings = []
+face_names = []
+process_this_frame = True
+
+# No, globals aren't the best, but neither is this script!
+processing = True
+def signal_handler(signal, frame):
+    global processing
+    processing = False
+signal.signal(signal.SIGINT, signal_handler)
+
+print("Processing video... ")
+while processing:
+    # Grab a single frame of video from the RPi camera as a numpy array
+    camera.capture(output, format="bgr")
+
+    # Find all the faces and face encodings in the current frame of video
+    face_locations = face_recognition.face_locations(output)
+    face_encodings = face_recognition.face_encodings(output, face_locations)
+
+    face_names = []
+    for face_encoding in face_encodings:
+        matches = face_recognition.compare_faces(source_encodings, face_encoding)
+        face_names = face_names + [name for name, match in zip(names, matches) if match]
+
+    out.write("\r\33[2K")
+    out.write("Found {} face".format(len(face_locations)))
+    if len(face_locations) == 1:
+        out.write(": ")
+    elif len(face_locations) > 0:
+        out.write("s: ")
+    else:
+        out.write("s.")
+    out.write(", ".join(sorted(face_names)))
+    out.flush()
+
+print("\nDone.")
