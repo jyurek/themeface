@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+for img in $(curl -s https://thoughtbot.com/boston | grep "person-photo" | perl -ne 'print "$_\n" for (/src="(.*?)"/g)' | grep -v no-photo-ralph | cut -d ? -f 1); do wget $img -O source_images/`basename $img`; done
