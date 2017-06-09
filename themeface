@@ -1,19 +1,26 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
-import picamera
-import numpy as np
 from sys import stdout as out
 import face_recognition
 import glob
 import os.path
 import signal
 import sys
-import time
+from timeit import default_timer as now
+
+try:
+    import camera.pi as camera
+    print("Pi Camera Loaded")
+except:
+    try:
+        import camera.opencv as camera
+        print("OpenCV Camera Loaded")
+    except:
+        print("Cannot load Pi or OpenCV Camera. Exiting.")
+        exit(2)
 
 print("Starting Camera... ")
-camera = picamera.PiCamera()
-camera.resolution = (320, 240)
-output = np.empty((240, 320, 3), dtype=np.uint8)
+camera = camera.Camera((320, 240))
 print("Done.")
 
 print("Loading training data... ")
@@ -43,13 +50,14 @@ signal.signal(signal.SIGINT, signal_handler)
 
 print("Processing video... ")
 while processing:
-    now = time.process_time()
+    start_time = now()
+
     # Grab a single frame of video from the RPi camera as a numpy array
-    camera.capture(output, format="bgr")
+    frame = camera.capture()
 
     # Find all the faces and face encodings in the current frame of video
-    face_locations = face_recognition.face_locations(output)
-    face_encodings = face_recognition.face_encodings(output, face_locations)
+    face_locations = face_recognition.face_locations(frame)
+    face_encodings = face_recognition.face_encodings(frame, face_locations)
 
     face_names = []
     for face_encoding in face_encodings:
@@ -65,7 +73,8 @@ while processing:
     else:
         out.write("s.")
     out.write(", ".join(sorted(face_names)))
-    out.write(" in {}".format(time.process_time() - now))
+    out.write(" in {}".format(now() - start_time))
     out.flush()
 
+camera.release()
 print("\nDone.")
