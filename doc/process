@@ -4,8 +4,14 @@
 1. comment out line with FILLED in it
 1. Setup Raspi
 1. Did all this https://gist.github.com/ageitgey/1ac8dbe8572f3f533df6269dab35df65
+1. It works!
+1. It's slow!
+1. Found `sudo python setup.py install --compiler-flags "-mfpu=neon"`
+1. Not enough. Also found https://github.com/fastfastball/dlib_for_arm/
+   Doesn't work.
 
 ## Notes
 
 * `compare_faces` returns a list that maps to the input list
 * If you want video, don't get rid of the `waitKey` call.
+* python needs `return` explicitly
