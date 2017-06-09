@@ -1,29 +1,37 @@
 #!/usr/bin/env python
 
-from sys import stdout as out
 import face_recognition
+import getopt
 import glob
 import os.path
 import signal
 import sys
+from sys import stdout as out
 from timeit import default_timer as now
 
+print("-> Starting Camera... ")
 try:
     import camera.pi as camera
-    print("Pi Camera Loaded")
+    print("Raspberry Pi Camera")
 except:
     try:
         import camera.opencv as camera
-        print("OpenCV Camera Loaded")
+        import cv2
+        have_opencv = True
+        print("Webcam via OpenCV")
     except:
-        print("Cannot load Pi or OpenCV Camera. Exiting.")
+        print("Cannot load any camera. Exiting.")
         exit(2)
-
-print("Starting Camera... ")
 camera = camera.Camera((320, 240))
 print("Done.")
 
-print("Loading training data... ")
+opts, args = getopt.getopt(sys.argv, "v")
+show_video = False
+for arg in args:
+    if arg == "-v":
+        show_video = True
+
+print("-> Loading training data... ")
 source_files = glob.glob("source_images/*.*")
 names = []
 source_encodings = []
@@ -48,7 +56,7 @@ def signal_handler(signal, frame):
     processing = False
 signal.signal(signal.SIGINT, signal_handler)
 
-print("Processing video... ")
+print("-> Processing video... ")
 while processing:
     start_time = now()
 
@@ -76,5 +84,25 @@ while processing:
     out.write(" in {0:.2f}s.".format(now() - start_time))
     out.flush()
 
+    if show_video and have_opencv:
+        # Display the results
+        for (top, right, bottom, left), name in zip(face_locations, face_names):
+            # Draw a box around the face
+            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+
+            # Draw a label with a name below the face
+            # cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+            font = cv2.FONT_HERSHEY_DUPLEX
+            cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 255, 255), 1)
+
+        # Display the resulting image
+        cv2.imshow('Video', frame)
+
+        # Allow things to draw
+        cv2.waitKey(1)
+
+
 camera.release()
+if have_opencv:
+    cv2.destroyAllWindows()
 print("\nDone.")
