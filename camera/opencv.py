@@ -12,5 +12,5 @@ class Camera(object):
         ret, frame = self.camera.read()
         return cv2.resize(frame, self.resolution)
 
-    def release():
+    def release(self):
         self.camera.release()

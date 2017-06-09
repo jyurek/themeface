@@ -11,8 +11,8 @@ class Camera(object):
         self.output_buffer = np.empty((240, 320, 3), dtype=np.uint8)
 
     def capture(self):
-        self.camera.capture(self.output, format="bgr")
-        self.output
+        self.camera.capture(self.output_buffer, format="bgr")
+        return self.output_buffer
 
-    def release():
+    def release(self):
         "Ok, cool."

@@ -71,9 +71,9 @@ while processing:
     elif len(face_locations) > 0:
         out.write("s: ")
     else:
-        out.write("s.")
+        out.write("s")
     out.write(", ".join(sorted(face_names)))
-    out.write(" in {0:.2f}s".format(now() - start_time))
+    out.write(" in {0:.2f}s.".format(now() - start_time))
     out.flush()
 
 camera.release()
