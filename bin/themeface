@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-import face_recognition
 import picamera
 import numpy as np
+from sys import stdout as out
+import face_recognition
 import glob
 import os.path
-import sys
 import signal
-from sys import stdout as out
+import sys
+import time
 
 print("Starting Camera... ")
 camera = picamera.PiCamera()
@@ -42,6 +43,7 @@ signal.signal(signal.SIGINT, signal_handler)
 
 print("Processing video... ")
 while processing:
+    now = time.process_time()
     # Grab a single frame of video from the RPi camera as a numpy array
     camera.capture(output, format="bgr")
 
@@ -63,6 +65,7 @@ while processing:
     else:
         out.write("s.")
     out.write(", ".join(sorted(face_names)))
+    out.write(" in {}".format(time.process_time() - now))
     out.flush()
 
 print("\nDone.")
