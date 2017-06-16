@@ -9,6 +9,17 @@ import sys
 from sys import stdout as out
 from timeit import default_timer as now
 
+from pprint import pprint as pp
+
+opts, args = getopt.getopt(sys.argv[1:], "vc:", ["camera="])
+show_video = False
+camera_index = 0
+for opt, arg in opts:
+    if opt == "-v":
+        show_video = True
+    elif opt in ["-c", "--camera"]:
+        camera_index = int(arg)
+
 print("-> Starting Camera... ")
 try:
     import camera.pi as camera
@@ -22,14 +33,8 @@ except:
     except:
         print("Cannot load any camera. Exiting.")
         exit(2)
-camera = camera.Camera((320, 240))
+camera = camera.Camera((320, 240), camera_index=camera_index)
 print("Done.")
-
-opts, args = getopt.getopt(sys.argv, "v")
-show_video = False
-for arg in args:
-    if arg == "-v":
-        show_video = True
 
 print("-> Loading training data... ")
 source_files = glob.glob("source_images/*.*")
@@ -85,20 +90,12 @@ while processing:
     out.flush()
 
     if show_video and have_opencv:
-        # Display the results
         for (top, right, bottom, left), name in zip(face_locations, face_names):
-            # Draw a box around the face
             cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-            # Draw a label with a name below the face
-            # cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
             font = cv2.FONT_HERSHEY_DUPLEX
             cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 255, 255), 1)
 
-        # Display the resulting image
         cv2.imshow('Video', frame)
-
-        # Allow things to draw
         cv2.waitKey(1)
 
 
