@@ -11,14 +11,17 @@ from timeit import default_timer as now
 
 from pprint import pprint as pp
 
-opts, args = getopt.getopt(sys.argv[1:], "vc:", ["camera="])
+opts, args = getopt.getopt(sys.argv[1:], "vc:r:", ["camera=", "rotate="])
 show_video = False
-camera_index = 0
+camera_index = None
+rotation = 0
 for opt, arg in opts:
     if opt == "-v":
         show_video = True
     elif opt in ["-c", "--camera"]:
         camera_index = int(arg)
+    elif opt in ["-r", "--rotate"]:
+        rotation = int(arg)
 
 print("-> Starting Camera... ")
 try:
@@ -30,9 +33,19 @@ except:
         import cv2
         have_opencv = True
         print("Webcam via OpenCV")
-    except:
+    except ImportError:
         print("Cannot load any camera. Exiting.")
         exit(2)
+
+if rotation != 0:
+    print("Rotating image {} degrees clockwise.".format(rotation))
+
+if camera_index is None:
+    print("Default camera.")
+    camera_index = 0
+else:
+    print("Camera index {}.".format(camera_index))
+
 camera = camera.Camera((320, 240), camera_index=camera_index)
 print("Done.")
 
@@ -65,8 +78,11 @@ print("-> Processing video... ")
 while processing:
     start_time = now()
 
-    # Grab a single frame of video from the RPi camera as a numpy array
+    # Grab a single frame of video
     frame = camera.capture()
+
+    if rotation > 0:
+        frame = camera.rotate(frame, rotation=rotation)
 
     # Find all the faces and face encodings in the current frame of video
     face_locations = face_recognition.face_locations(frame)
