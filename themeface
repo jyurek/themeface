@@ -26,6 +26,7 @@ for opt, arg in opts:
 print("-> Starting Camera... ")
 try:
     import camera.pi as camera
+    have_opencv = False
     print("Raspberry Pi Camera")
 except:
     try:
@@ -48,6 +49,9 @@ else:
 
 camera = camera.Camera((320, 240), camera_index=camera_index)
 print("Done.")
+
+if show_video and not have_opencv:
+    print("Unable to show video output.")
 
 print("-> Loading training data... ")
 source_files = glob.glob("source_images/*.*")
