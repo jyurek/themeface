@@ -14,14 +14,15 @@ import time
 from pprint import pprint as pp
 
 opts, args = getopt.getopt(sys.argv[1:],
-        "vc:r:f:d:p:",
-        ["camera=", "rotate=", "fps=", "detect-length=", "detect-percentage="])
+        "vc:r:f:l:%:p:",
+        ["camera=", "rotate=", "fps=", "detect-length=", "detect-percentage=", "music="])
 show_video = False
 camera_index = None
 rotation = 0
 fps = 10
 detect_length = 1.0
 detect_percentage = 0.75
+music_path = "music"
 for opt, arg in opts:
     if opt == "-v":
         show_video = True
@@ -31,10 +32,12 @@ for opt, arg in opts:
         rotation = int(arg)
     elif opt in ["-f", "--fps"]:
         fps = int(arg)
-    elif opt in ["-d", "--detect_length"]:
+    elif opt in ["-l", "--detect-length"]:
         detect_length = float(arg)
-    elif opt in ["-p", "--detect_percentage="]:
+    elif opt in ["-%", "--detect-percentage="]:
         detect_percentage = float(arg) / 100.0
+    elif opt in ["-p", "--music-path"]:
+        music_path = arg
 
 print("-> Starting Camera... ")
 print("Attempting to run at {}fps".format(fps))
@@ -93,12 +96,25 @@ def signal_handler(signal, frame):
     processing = False
 signal.signal(signal.SIGINT, signal_handler)
 
+def play(name):
+    if os.fork() == 0:
+        files = glob.glob(os.path.join(music_path, name + ".*"))
+        print("playing {}".format(files[0]))
+        os.execvp("afplay", ("afplay", files[0]))
+
+def unhold(name):
+    def unhold_person():
+        detections.pop(name, None)
+    return unhold_person
+
 def detect_entrance_for(name):
     def detect_entrance():
         required_amount = fps * detect_length * detect_percentage
         if detections[name] >= required_amount:
+            play(name)
             print("PLAYING MUSIC FOR {}. {} of {} within {}".format(name, detections[name], required_amount, detect_length))
-        detections.pop(name, None)
+        detections[name] = "hold"
+        Timer(600, unhold(name))
     return detect_entrance
 
 print("-> Processing video... ")
@@ -120,12 +136,15 @@ while processing:
         matches = face_recognition.compare_faces(source_encodings, face_encoding)
         face_names = face_names + [name for name, match in zip(names, matches) if match]
 
+    matches = len(face_locations)
     if matches > 0:
         for name in face_names:
             if name not in detections:
                 timer = Timer(detect_length, detect_entrance_for(name))
                 timer.start()
                 detections[name] = 1
+            elif detections[name] == "hold":
+                "Ignore this."
             else:
                 detections[name] = detections[name] + 1
 
@@ -139,7 +158,6 @@ while processing:
         cv2.waitKey(1)
 
     processing_time = now() - start_time
-    matches = len(face_locations)
     out.write("\r\33[2K")
     out.write("Found {} face".format(matches))
     if matches == 1:
