@@ -7,14 +7,21 @@ import os.path
 import signal
 import sys
 from sys import stdout as out
+from threading import Timer
 from timeit import default_timer as now
+import time
 
 from pprint import pprint as pp
 
-opts, args = getopt.getopt(sys.argv[1:], "vc:r:", ["camera=", "rotate="])
+opts, args = getopt.getopt(sys.argv[1:],
+        "vc:r:f:d:p:",
+        ["camera=", "rotate=", "fps=", "detect-length=", "detect-percentage="])
 show_video = False
 camera_index = None
 rotation = 0
+fps = 10
+detect_length = 1.0
+detect_percentage = 0.75
 for opt, arg in opts:
     if opt == "-v":
         show_video = True
@@ -22,8 +29,15 @@ for opt, arg in opts:
         camera_index = int(arg)
     elif opt in ["-r", "--rotate"]:
         rotation = int(arg)
+    elif opt in ["-f", "--fps"]:
+        fps = int(arg)
+    elif opt in ["-d", "--detect_length"]:
+        detect_length = float(arg)
+    elif opt in ["-p", "--detect_percentage="]:
+        detect_percentage = float(arg) / 100.0
 
 print("-> Starting Camera... ")
+print("Attempting to run at {}fps".format(fps))
 try:
     import camera.pi as camera
     have_opencv = False
@@ -69,7 +83,8 @@ print("Done.")
 face_locations = []
 face_encodings = []
 face_names = []
-process_this_frame = True
+detections = {}
+frame_length = 1.0 / fps
 
 # No, globals aren't the best, but neither is this script!
 processing = True
@@ -78,12 +93,20 @@ def signal_handler(signal, frame):
     processing = False
 signal.signal(signal.SIGINT, signal_handler)
 
+def detect_entrance_for(name):
+    def detect_entrance():
+        required_amount = fps * detect_length * detect_percentage
+        if detections[name] >= required_amount:
+            print("PLAYING MUSIC FOR {}. {} of {} within {}".format(name, detections[name], required_amount, detect_length))
+        detections.pop(name, None)
+    return detect_entrance
+
 print("-> Processing video... ")
 while processing:
     start_time = now()
 
     # Grab a single frame of video
-    frame = camera.capture()
+    frame = camera.capture_frame()
 
     if rotation > 0:
         frame = camera.rotate(frame, rotation=rotation)
@@ -97,17 +120,14 @@ while processing:
         matches = face_recognition.compare_faces(source_encodings, face_encoding)
         face_names = face_names + [name for name, match in zip(names, matches) if match]
 
-    out.write("\r\33[2K")
-    out.write("Found {} face".format(len(face_locations)))
-    if len(face_locations) == 1:
-        out.write(": ")
-    elif len(face_locations) > 0:
-        out.write("s: ")
-    else:
-        out.write("s")
-    out.write(", ".join(sorted(face_names)))
-    out.write(" in {0:.2f}s.".format(now() - start_time))
-    out.flush()
+    if matches > 0:
+        for name in face_names:
+            if name not in detections:
+                timer = Timer(detect_length, detect_entrance_for(name))
+                timer.start()
+                detections[name] = 1
+            else:
+                detections[name] = detections[name] + 1
 
     if show_video and have_opencv:
         for (top, right, bottom, left), name in zip(face_locations, face_names):
@@ -118,6 +138,23 @@ while processing:
         cv2.imshow('Video', frame)
         cv2.waitKey(1)
 
+    processing_time = now() - start_time
+    matches = len(face_locations)
+    out.write("\r\33[2K")
+    out.write("Found {} face".format(matches))
+    if matches == 1:
+        out.write(": ")
+    elif matches > 0:
+        out.write("s: ")
+    else:
+        out.write("s")
+    out.write(", ".join(sorted(face_names)))
+    out.write(" in {0:.2f}s.".format(processing_time))
+    out.flush()
+
+    # Wait for FPS
+    if processing_time < frame_length:
+        time.sleep(frame_length - processing_time)
 
 camera.release()
 if have_opencv:
