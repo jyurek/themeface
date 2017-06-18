@@ -99,8 +99,11 @@ signal.signal(signal.SIGINT, signal_handler)
 def play(name):
     if os.fork() == 0:
         files = glob.glob(os.path.join(music_path, name + ".*"))
-        print("playing {}".format(files[0]))
-        os.execvp("afplay", ("afplay", files[0]))
+        if len(files) > 0:
+            print("playing {}".format(files[0]))
+            os.execvp("afplay", ("afplay", files[0]))
+        else:
+            os.execvp("say", ("say", "-v", "Alex", "theme music for", name, "because they don't have any set"))
 
 def unhold(name):
     def unhold_person():
