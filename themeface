@@ -112,9 +112,9 @@ def unhold(name):
 def detect_entrance_for(name):
     def detect_entrance():
         required_amount = fps * detect_length * detect_percentage
+        print("\nDetection results for {}. {} of {} matches within {}s".format(name, detections[name], required_amount, detect_length))
         if detections[name] >= required_amount:
             play(name)
-            print("\nPlaying music for {}. {} of {} matches within {}s".format(name, detections[name], required_amount, detect_length))
             detections[name] = "hold"
         Timer(600, unhold(name))
     return detect_entrance
