@@ -100,10 +100,9 @@ def play(name):
     if os.fork() == 0:
         files = glob.glob(os.path.join(music_path, name + ".*"))
         if len(files) > 0:
-            print("playing {}".format(files[0]))
             os.execvp("afplay", ("afplay", files[0]))
         else:
-            os.execvp("say", ("say", "-v", "Alex", "theme music for", name, "because they don't have any set"))
+            os.execvp("say", ("say", "-v", "Alex", "this is the theme music for", name))
 
 def unhold(name):
     def unhold_person():
@@ -115,7 +114,7 @@ def detect_entrance_for(name):
         required_amount = fps * detect_length * detect_percentage
         if detections[name] >= required_amount:
             play(name)
-            print("PLAYING MUSIC FOR {}. {} of {} within {}".format(name, detections[name], required_amount, detect_length))
+            print("\nPlaying music for {}. {} of {} matches within {}s".format(name, detections[name], required_amount, detect_length))
         detections[name] = "hold"
         Timer(600, unhold(name))
     return detect_entrance
