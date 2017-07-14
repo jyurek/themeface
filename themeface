@@ -102,7 +102,7 @@ def play(name):
         if len(files) > 0:
             os.execvp("afplay", ("afplay", files[0]))
         else:
-            os.execvp("say", ("say", "-v", "Alex", "this is the theme music for", name))
+            os.execvp("say", ("say", "-v", "Tessa", "this is the theme music for", name))
 
 def unhold(name):
     def unhold_person():
@@ -115,7 +115,7 @@ def detect_entrance_for(name):
         if detections[name] >= required_amount:
             play(name)
             print("\nPlaying music for {}. {} of {} matches within {}s".format(name, detections[name], required_amount, detect_length))
-        detections[name] = "hold"
+            detections[name] = "hold"
         Timer(600, unhold(name))
     return detect_entrance
 
