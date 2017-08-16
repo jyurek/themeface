@@ -1,5 +1,6 @@
-1. brew install homebrew/science/dlib python boost-python
-1. pip install face_recognition
+1. brew cask install xquartz
+1. brew install homebrew/science/dlib python boost-python cmake
+1. pip2 install face_recognition
 1. brew install opencv
 1. comment out line with FILLED in it
 1. Setup Raspi
