@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+
+from PIL import Image, ImageDraw
+import face_recognition
+import getopt
+import glob
+import os.path
+import signal
+import sys
+from sys import stdout as out
+from threading import Timer
+from timeit import default_timer as now
+import time
+
+from pprint import pprint as pp
+
+opts, args = getopt.getopt(sys.argv[1:],
+        "vc:r:f:l:%:p:",
+        ["camera=", "rotate=", "fps=", "detect-length=", "detect-percentage=", "music="])
+show_video = False
+camera_index = None
+rotation = 0
+fps = 10
+detect_length = 1.0
+detect_percentage = 0.75
+music_path = "music"
+for opt, arg in opts:
+    if opt == "-v":
+        show_video = True
+    elif opt in ["-c", "--camera"]:
+        camera_index = int(arg)
+    elif opt in ["-r", "--rotate"]:
+        rotation = int(arg)
+    elif opt in ["-f", "--fps"]:
+        fps = int(arg)
+
+print("-> Starting Camera... ")
+print("Attempting to run at {}fps".format(fps))
+try:
+    import camera.pi as camera
+    have_opencv = False
+    print("Raspberry Pi Camera")
+except:
+    try:
+        import camera.opencv as camera
+        import cv2
+        have_opencv = True
+        print("Webcam via OpenCV")
+    except ImportError:
+        print("Cannot load any camera. Exiting.")
+        exit(2)
+
+if rotation != 0:
+    print("Rotating image {} degrees clockwise.".format(rotation))
+
+if camera_index is None:
+    print("Default camera.")
+    camera_index = 0
+else:
+    print("Camera index {}.".format(camera_index))
+
+camera = camera.Camera((320, 240), camera_index=camera_index)
+print("Done.")
+
+if show_video and not have_opencv:
+    print("Unable to show video output.")
+
+# Initialize some variables
+face_locations = []
+face_encodings = []
+face_names = []
+detections = {}
+frame_length = 1.0 / fps
+
+facial_features = [
+    'chin',
+    'left_eyebrow',
+    'right_eyebrow',
+    'nose_bridge',
+    'nose_tip',
+    'left_eye',
+    'right_eye',
+    'top_lip',
+    'bottom_lip'
+]
+
+# No, globals aren't the best, but neither is this script!
+processing = True
+def signal_handler(signal, frame):
+    global processing
+    processing = False
+signal.signal(signal.SIGINT, signal_handler)
+
+print("-> Processing video... ")
+while processing:
+    start_time = now()
+
+    # Grab a single frame of video
+    frame = camera.capture_frame()
+
+    if rotation > 0:
+        frame = camera.rotate(frame, rotation=rotation)
+
+    face_landmarks_list = face_recognition.face_landmarks(frame)
+
+    for face_landmarks in face_landmarks_list:
+        if show_video and have_opencv:
+            # Let's trace out each facial feature in the image with a line!
+            for facial_feature in facial_features:
+                # print("face_landmarks[{}] = {}".format(facial_feature, face_landmarks[facial_feature]))
+                for x in range(1, len(face_landmarks[facial_feature])):
+                    cv2.line(frame, face_landmarks[facial_feature][x-1], face_landmarks[facial_feature][x], color=(255, 255, 255), thickness=3)
+
+
+    cv2.imshow('Video', frame)
+    cv2.waitKey(1)
+    processing_time = now() - start_time
+
+    # Wait for FPS
+    if processing_time < frame_length:
+        time.sleep(frame_length - processing_time)
+
+camera.release()
+if have_opencv:
+    cv2.destroyAllWindows()
+print("\nDone.")
+
