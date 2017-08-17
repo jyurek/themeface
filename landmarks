@@ -112,6 +112,7 @@ while processing:
                     cv2.line(frame, face_landmarks[facial_feature][x-1], face_landmarks[facial_feature][x], color=(255, 255, 255), thickness=3)
 
 
+    frame = cv2.resize(frame, (0, 0), fx=3, fy=3)
     cv2.imshow('Video', frame)
     cv2.waitKey(1)
     processing_time = now() - start_time

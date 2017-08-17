@@ -156,6 +156,7 @@ while processing:
             font = cv2.FONT_HERSHEY_DUPLEX
             cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 255, 255), 1)
 
+        frame = cv2.resize(frame, (0, 0), fx=3, fy=3)
         cv2.imshow('Video', frame)
         cv2.waitKey(1)
 
