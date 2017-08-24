@@ -15,24 +15,25 @@ import time
 from pprint import pprint as pp
 
 opts, args = getopt.getopt(sys.argv[1:],
-        "vc:r:f:l:%:p:",
-        ["camera=", "rotate=", "fps=", "detect-length=", "detect-percentage=", "music="])
-show_video = False
+        "vc:r:f:s:",
+        ["camera=", "rotate=", "fps=", "scale="])
+show_video = True
 camera_index = None
 rotation = 0
-fps = 10
+fps = 20
 detect_length = 1.0
 detect_percentage = 0.75
 music_path = "music"
+scale = 1
 for opt, arg in opts:
-    if opt == "-v":
-        show_video = True
-    elif opt in ["-c", "--camera"]:
+    if opt in ["-c", "--camera"]:
         camera_index = int(arg)
     elif opt in ["-r", "--rotate"]:
         rotation = int(arg)
     elif opt in ["-f", "--fps"]:
         fps = int(arg)
+    elif opt in ["-s", "--scale"]:
+        scale = int(arg)
 
 print("-> Starting Camera... ")
 print("Attempting to run at {}fps".format(fps))
@@ -59,7 +60,7 @@ if camera_index is None:
 else:
     print("Camera index {}.".format(camera_index))
 
-camera = camera.Camera((320, 240), camera_index=camera_index)
+camera = camera.Camera((640, 480), camera_index=camera_index)
 print("Done.")
 
 if show_video and not have_opencv:
@@ -103,16 +104,16 @@ while processing:
 
     face_landmarks_list = face_recognition.face_landmarks(frame)
 
+    frame = cv2.resize(frame, (0, 0), fx=scale, fy=scale)
     for face_landmarks in face_landmarks_list:
         if show_video and have_opencv:
             # Let's trace out each facial feature in the image with a line!
             for facial_feature in facial_features:
                 # print("face_landmarks[{}] = {}".format(facial_feature, face_landmarks[facial_feature]))
                 for x in range(1, len(face_landmarks[facial_feature])):
-                    cv2.line(frame, face_landmarks[facial_feature][x-1], face_landmarks[facial_feature][x], color=(255, 255, 255), thickness=3)
+                    cv2.line(frame, tuple([c * scale for c in face_landmarks[facial_feature][x-1]]), tuple([c * scale for c in face_landmarks[facial_feature][x]]), color=(255, 255, 255), thickness=3)
 
 
-    frame = cv2.resize(frame, (0, 0), fx=3, fy=3)
     cv2.imshow('Video', frame)
     cv2.waitKey(1)
     processing_time = now() - start_time
